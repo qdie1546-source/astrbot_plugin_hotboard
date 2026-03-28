@@ -47,3 +47,35 @@ cd AstrBot/data/plugins
 git clone https://github.com/qdie1546-source/astrbot_plugin_hotboard.git
 
 # 重启 AstrBot
+
+
+
+**指令格式**：`/今日热点 <平台代码>`
+
+**支持格式**：
+- 英文代码（如 `weibo`）
+- 中文名称（如 `微博热搜`）
+
+**使用示例**：
+指令：/今日热点 <平台代码> 支持：英文代码（weibo）或中文名称（微博热搜）
+示例：  /今日热点 weibo  /今日热点 抖音  /今日热点 bilibili
+
+## 📋 平台列表（分类展示）
+
+### 社交资讯
+- weibo(微博热搜), zhihu(知乎热榜), tieba(百度贴吧), v2ex, ngabbs(NGA论坛), hupu(虎扑)
+
+### 视频娱乐  
+- bilibili(哔哩哔哩), acfun(A站), douyin(抖音), kuaishou(快手)
+
+### 新闻媒体
+- thepaper(澎湃新闻), toutiao(今日头条), qq-news(腾讯新闻), sina(新浪热搜), baidu(百度热搜)
+
+### 科技数码
+- ithome(IT之家), juejin(掘金), csdn, sspai(少数派), huxiu(虎嗅), 36kr(36氪)
+
+### 游戏
+- lol(英雄联盟), genshin(原神), honkai(崩坏3), starrail(星穹铁道)
+
+### 实用工具
+- weatheralarm(天气预警), earthquake(地震速报), history(历史上的今天)
