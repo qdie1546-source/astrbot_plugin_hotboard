@@ -1,0 +1,11 @@
+api_key: "uapi-zrvbf3gaVhkhUfPrKrzOHpYA5ZU2ij3pz5kM3nNs"
+
+default_types:
+  - weibo
+  - douyin
+
+limit: 5
+
+push_enabled: true
+
+use_image: false
