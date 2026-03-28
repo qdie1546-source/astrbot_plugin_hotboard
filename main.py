@@ -18,10 +18,60 @@ import astrbot.api.message_components as Comp
 class HotboardPlugin(Star):
     """热点榜单插件主类"""
     
+    # 平台名称映射（硬编码，避免配置不支持dict类型）
+    PLATFORM_NAMES = {
+        "bilibili": "哔哩哔哩",
+        "acfun": "A站",
+        "weibo": "微博热搜",
+        "zhihu": "知乎热榜",
+        "zhihu-daily": "知乎日报",
+        "douyin": "抖音",
+        "kuaishou": "快手",
+        "douban-movie": "豆瓣电影",
+        "douban-group": "豆瓣小组",
+        "tieba": "百度贴吧",
+        "hupu": "虎扑",
+        "ngabbs": "NGA论坛",
+        "v2ex": "V2EX",
+        "52pojie": "吾爱破解",
+        "hostloc": "全球主机交流",
+        "coolapk": "酷安",
+        "baidu": "百度热搜",
+        "thepaper": "澎湃新闻",
+        "toutiao": "今日头条",
+        "qq-news": "腾讯新闻",
+        "sina": "新浪热搜",
+        "sina-news": "新浪新闻",
+        "netease-news": "网易新闻",
+        "huxiu": "虎嗅",
+        "ifanr": "爱范儿",
+        "sspai": "少数派",
+        "ithome": "IT之家",
+        "ithome-xijiayi": "IT之家喜加一",
+        "juejin": "掘金",
+        "jianshu": "简书",
+        "guokr": "果壳",
+        "36kr": "36氪",
+        "51cto": "51CTO",
+        "csdn": "CSDN",
+        "nodeseek": "NodeSeek",
+        "hellogithub": "HelloGitHub",
+        "lol": "英雄联盟",
+        "genshin": "原神",
+        "honkai": "崩坏3",
+        "starrail": "星穹铁道",
+        "netease-music": "网易云音乐热歌榜",
+        "qq-music": "QQ音乐热歌榜",
+        "weread": "微信读书",
+        "weatheralarm": "天气预警",
+        "earthquake": "地震速报",
+        "history": "历史上的今天"
+    }
+    
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
         self.config = config
-        self.platform_names = config.get("platform_names", {})
+        self.platform_names = self.PLATFORM_NAMES
         self.default_platforms = config.get("default_platforms", ["weibo"])
         self.api_key = config.get("api_key", "uapi-zrvbf3gaVhkhUfPrKrzOHpYA5ZU2ij3pz5kM3nNs")
         self.top_count = config.get("top_count", 10)
@@ -98,12 +148,7 @@ class HotboardPlugin(Star):
                     try:
                         # 解析目标格式：platform:type:id
                         if isinstance(target, str) and ":" in target:
-                            parts = target.split(":")
-                            if len(parts) >= 3:
-                                umo = target
-                            else:
-                                logger.warning(f"[Hotboard] 目标格式不正确: {target}")
-                                continue
+                            umo = target
                         else:
                             logger.warning(f"[Hotboard] 目标格式不正确: {target}")
                             continue
@@ -120,19 +165,9 @@ class HotboardPlugin(Star):
             logger.error(f"[Hotboard] 定时发送失败: {e}")
     
     async def _fetch_hotboard(self, platform_type: str) -> Optional[Dict]:
-        """
-        获取单个平台的热榜数据
-        
-        Args:
-            platform_type: 平台类型标识
-            
-        Returns:
-            解析后的JSON数据或None
-        """
+        """获取单个平台的热榜数据"""
         url = f"https://uapis.cn/api/v1/misc/hotboard?type={platform_type}"
-        headers = {
-            "Authorization": f"Bearer {self.api_key}"
-        }
+        headers = {"Authorization": f"Bearer {self.api_key}"}
         
         try:
             async with aiohttp.ClientSession() as session:
@@ -159,15 +194,7 @@ class HotboardPlugin(Star):
             return None
     
     async def _fetch_multiple_platforms(self, platforms: List[str]) -> List[Dict]:
-        """
-        并发获取多个平台的热榜
-        
-        Args:
-            platforms: 平台类型列表
-            
-        Returns:
-            热榜数据列表
-        """
+        """并发获取多个平台的热榜"""
         tasks = [self._fetch_hotboard(p) for p in platforms]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
@@ -181,21 +208,7 @@ class HotboardPlugin(Star):
         return valid_results
     
     def _format_single_item(self, item: Dict, platform_name: str) -> List:
-        """
-        格式化单条热榜条目为消息组件
-        
-        模板：
-        title&hot_value
-        [pic]
-        url
-        
-        Args:
-            item: 热榜条目数据
-            platform_name: 平台名称
-            
-        Returns:
-            消息组件列表
-        """
+        """格式化单条热榜条目为消息组件"""
         chain = []
         
         # 标题和热度
@@ -222,16 +235,7 @@ class HotboardPlugin(Star):
         return chain
     
     def _build_messages(self, results: List[Dict]) -> List[List]:
-        """
-        构建消息链列表
-        
-        Args:
-            results: 热榜数据列表
-            
-        Returns:
-            如果是合并模式，返回包含一个大消息链的列表；
-            如果是分开模式，返回多个消息链的列表
-        """
+        """构建消息链列表"""
         if not results:
             return []
         
@@ -285,14 +289,12 @@ class HotboardPlugin(Star):
     async def today_hot(self, event: AstrMessageEvent, platform: str = None):
         """
         查询今日热点榜单
-        
         用法：
         /今日热点 - 使用默认平台查询
         /今日热点 抖音 - 查询指定平台（如抖音、微博等）
         """
         # 确定要查询的平台
         if platform:
-            # 检查是否是有效的平台类型（支持中文名或英文名）
             target_platforms = []
             
             # 直接匹配type
@@ -308,17 +310,17 @@ class HotboardPlugin(Star):
                         break
                 
                 if not found:
-                    yield event.plain_result(f"未知平台：{platform}。请使用有效的平台名称，如：微博热搜、抖音、bilibili等")
+                    yield event.plain_result(f"❌ 未知平台：{platform}\n💡 请使用 /热点平台 查看所有支持的平台")
                     return
         else:
             # 使用默认平台
             if not self.default_platforms:
-                yield event.plain_result("未设置默认平台，请使用 /今日热点 <平台名> 指定平台")
+                yield event.plain_result("⚠️ 未设置默认平台，请使用 /今日热点 <平台名> 指定平台\n💡 示例：/今日热点 weibo")
                 return
             target_platforms = self.default_platforms
         
         # 发送等待提示
-        await event.send(event.plain_result("🔍 正在获取热榜数据..."))
+        yield event.plain_result("🔍 正在获取热榜数据，请稍候...")
         
         try:
             # 获取数据
@@ -337,7 +339,7 @@ class HotboardPlugin(Star):
             # 如果不是合并模式，添加平台提示
             if not self.merge_message and len(results) > 1:
                 platform_list = "、".join([r["name"] for r in results])
-                yield event.plain_result(f"\n✅ 以上来自：{platform_list}")
+                yield event.plain_result(f"✅ 以上来自：{platform_list}")
                 
         except Exception as e:
             logger.error(f"[Hotboard] 指令执行异常: {e}")
@@ -347,18 +349,30 @@ class HotboardPlugin(Star):
     async def list_platforms(self, event: AstrMessageEvent):
         """
         查看支持的热点平台列表
-        
         用法：/热点平台
         """
-        msg = "📋 支持的热榜平台（使用 /今日热点 <平台名> 查询）：\n\n"
+        msg = "📋 支持的热榜平台（使用 /今日热点 <平台代码> 查询）：\n\n"
         
-        # 分组显示，每行4个
-        platforms = list(self.platform_names.items())
-        for i in range(0, len(platforms), 4):
-            row = platforms[i:i+4]
-            line = " | ".join([f"{name}({type})" for type, name in row])
-            msg += line + "\n"
+        # 按分类显示
+        categories = {
+            "社交": ["weibo", "zhihu", "zhihu-daily", "tieba", "v2ex", "ngabbs", "hupu"],
+            "视频": ["bilibili", "acfun", "douyin", "kuaishou"],
+            "新闻": ["thepaper", "toutiao", "qq-news", "sina", "sina-news", "netease-news", "baidu"],
+            "科技": ["ithome", "ithome-xijiayi", "juejin", "csdn", "51cto", "nodeseek", "hellogithub", "sspai", "huxiu", "ifanr", "jianshu", "guokr", "36kr"],
+            "娱乐": ["douban-movie", "douban-group", "netease-music", "qq-music", "weread"],
+            "游戏": ["lol", "genshin", "honkai", "starrail"],
+            "工具": ["weatheralarm", "earthquake", "history", "52pojie", "hostloc", "coolapk"]
+        }
         
-        msg += f"\n💡 默认平台：{', '.join([self.platform_names.get(p, p) for p in self.default_platforms])}"
+        for cat_name, platforms in categories.items():
+            msg += f"【{cat_name}】"
+            items = []
+            for p in platforms:
+                if p in self.platform_names:
+                    items.append(f"{self.platform_names[p]}({p})")
+            msg += " | ".join(items) + "\n"
+        
+        msg += f"\n💡 当前默认平台：{', '.join([self.platform_names.get(p, p) for p in self.default_platforms])}\n"
+        msg += "💡 使用示例：/今日热点 weibo 或 /今日热点 微博热搜"
         
         yield event.plain_result(msg)
