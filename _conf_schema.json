@@ -1,6 +1,6 @@
 {
   "default_types": {
-    "type": "array",
+    "type": "list",
     "title": "默认热点平台",
     "description": "可多选",
     "items": {
@@ -27,17 +27,17 @@
     "default": ["weibo", "douyin"]
   },
   "interval": {
-    "type": "number",
+    "type": "int",
     "title": "推送间隔（秒）",
     "default": 1800
   },
   "push_enabled": {
-    "type": "boolean",
+    "type": "bool",
     "title": "开启定时推送",
     "default": true
   },
   "use_forward": {
-    "type": "boolean",
+    "type": "bool",
     "title": "使用合并转发",
     "default": true
   }
