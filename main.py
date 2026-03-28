@@ -7,55 +7,33 @@ from astrbot.api import logger
 API_URL = "https://uapis.cn/api/v1/misc/hotboard"
 DEFAULT_API_KEY = "uapi-zrvbf3gaVhkhUfPrKrzOHpYA5ZU2ij3pz5kM3nNs"
 
-PLATFORMS = [
-"bilibili","acfun","weibo","zhihu","zhihu-daily","douyin","kuaishou",
-"douban-movie","douban-group","tieba","hupu","ngabbs","v2ex",
-"52pojie","hostloc","coolapk","baidu","thepaper","toutiao",
-"qq-news","sina","sina-news","netease-news","huxiu","ifanr",
-"sspai","ithome","ithome-xijiayi","juejin","jianshu","guokr",
-"36kr","51cto","csdn","nodeseek","hellogithub","lol","genshin",
-"honkai","starrail","netease-music","qq-music","weread",
-"weatheralarm","earthquake","history"
-]
-
-@register("astrbot_plugin_hotboard", "星落云", "热点榜单插件", "2.0.3")
+@register("astrbot_plugin_hotboard", "星落云", "热点榜单插件", "2.0.6")
 class HotBoardPlugin(Star):
 
     def __init__(self, context):
         super().__init__(context)
-        self.config = self.load_config()
+        self.config = context.config  # ⚠️ 兼容 v4.22
         asyncio.create_task(self.loop_push())
 
     async def fetch(self, type_):
-        headers = {
-            "Authorization": f"Bearer {DEFAULT_API_KEY}"
-        }
-
+        headers = {"Authorization": f"Bearer {DEFAULT_API_KEY}"}
         async with httpx.AsyncClient(timeout=10) as client:
             r = await client.get(API_URL, headers=headers, params={"type": type_})
             return r.json()
 
     async def build_forward(self, types):
         nodes = []
-
         for t in types:
             try:
                 data = await self.fetch(t)
-
-                nodes.append({
-                    "type": "node",
-                    "data": {"name": "热点榜单", "uin": "10000", "content": f"【{t}】"}
-                })
-
+                nodes.append({"type": "node", "data": {"name": "热点榜单", "uin": "10000", "content": f"【{t}】"}})
                 for i in data.get("list", []):
                     nodes.append({
                         "type": "node",
                         "data": {"name": "热点榜单", "uin": "10000", "content": f"{i['title']}（{i['hot_value']}）\n{i['url']}"}
                     })
-
             except Exception as e:
                 logger.error(f"{t} 获取失败: {e}")
-
         return nodes
 
     @filter.command("今日热点")
@@ -77,7 +55,7 @@ class HotBoardPlugin(Star):
         await asyncio.sleep(10)
         while True:
             try:
-                if self.config.get("push_enabled", False):
+                if self.config.get("push_enabled", True):
                     types = self.config.get("default_types", ["weibo"])
                     msg = await self.build_forward(types)
                     await self.context.send_all(msg)
