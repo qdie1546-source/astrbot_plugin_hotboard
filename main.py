@@ -1,6 +1,7 @@
 import httpx
 import time
-from astrbot.api.star import Star, register, scheduler
+import asyncio
+from astrbot.api.star import Star, register
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api import logger
 
@@ -23,7 +24,12 @@ class HotBoardPlugin(Star):
         self.config = self.load_config()
         self.cache = {}
 
-    # 限流（60秒）
+        # 启动定时任务
+        asyncio.create_task(self.loop_push())
+
+    # ======================
+    # 限流
+    # ======================
     def is_rate_limited(self, key):
         now = time.time()
         last = self.cache.get(key, 0)
@@ -32,7 +38,9 @@ class HotBoardPlugin(Star):
         self.cache[key] = now
         return False
 
-    # 获取数据
+    # ======================
+    # API请求
+    # ======================
     async def fetch(self, type_):
         headers = {
             "Authorization": f"Bearer {self.config['api_key']}"
@@ -43,25 +51,25 @@ class HotBoardPlugin(Star):
             data = resp.json()
 
         if "list" not in data:
-            raise Exception("API返回异常")
+            raise Exception("API异常")
 
         return data
 
+    # ======================
     # 格式化
+    # ======================
     def format(self, type_, data):
         limit = self.config.get("limit", 5)
         text = f"\n【{type_} 热点】\n"
 
         for item in data["list"][:limit]:
-            title = item["title"]
-            hot = item["hot_value"]
-            url = item["url"]
-
-            text += f"{title}（{hot}）\n{url}\n\n"
+            text += f"{item['title']}（{item['hot_value']}）\n{item['url']}\n\n"
 
         return text
 
+    # ======================
     # 主逻辑
+    # ======================
     async def get_hotboards(self, types):
         result = ""
 
@@ -80,7 +88,9 @@ class HotBoardPlugin(Star):
 
         return result
 
+    # ======================
     # 指令
+    # ======================
     @filter.command("今日热点")
     async def hot(self, event: AstrMessageEvent, type_: str = None):
 
@@ -98,14 +108,23 @@ class HotBoardPlugin(Star):
         else:
             yield event.plain_result(result)
 
-    # 定时推送（每30分钟）
-    @scheduler.scheduled_job("cron", id="hotboard_push", minute="*/30")
-    async def push(self):
+    # ======================
+    # 手动定时任务（核心替代方案）
+    # ======================
+    async def loop_push(self):
+        await asyncio.sleep(10)  # 等待Bot启动
 
-        if not self.config.get("push_enabled", False):
-            return
+        while True:
+            try:
+                if self.config.get("push_enabled", False):
 
-        types = self.config.get("default_types", ["weibo"])
-        result = await self.get_hotboards(types)
+                    types = self.config.get("default_types", ["weibo"])
+                    result = await self.get_hotboards(types)
 
-        await self.context.send_all(result)
+                    await self.context.send_all(result)
+
+            except Exception as e:
+                logger.error(f"定时任务错误: {e}")
+
+            # 每30分钟执行一次
+            await asyncio.sleep(1800)
