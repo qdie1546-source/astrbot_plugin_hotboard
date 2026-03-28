@@ -8,4 +8,7 @@ limit: 5
 
 push_enabled: true
 
+# 定时间隔（秒）
+interval: 1800
+
 use_image: false
