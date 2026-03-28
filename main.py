@@ -2,7 +2,7 @@
 AstrBot 热点榜单插件 v3.0.1
 作者：星落云
 仓库：https://github.com/qdie1546-source/astrbot_plugin_hotboard
-支持多平台热榜获取、定时推送、合并发送等功能
+支持多平台热榜获取、定时推送、合并转发等功能
 """
 import asyncio
 import aiohttp
@@ -75,7 +75,7 @@ class HotboardPlugin(Star):
         self.default_platforms = config.get("default_platforms", ["weibo"])
         self.api_key = config.get("api_key", "uapi-zrvbf3gaVhkhUfPrKrzOHpYA5ZU2ij3pz5kM3nNs")
         self.top_count = config.get("top_count", 10)
-        self.merge_message = config.get("merge_message", True)
+        self.merge_forward = config.get("merge_forward", True)  # 改为合并转发
         self.enable_schedule = config.get("enable_schedule", True)
         self.schedule_time = config.get("schedule_time", "08:00")
         self.target_groups = config.get("target_groups", [])
@@ -135,28 +135,24 @@ class HotboardPlugin(Star):
             results = await self._fetch_multiple_platforms(self.default_platforms)
             if not results:
                 return
-                
-            # 构建消息
-            message_chains = self._build_messages(results)
             
-            # 发送到目标群组或所有群组
+            # 构建合并转发消息
+            nodes = self._build_forward_nodes(results)
+            
             logger.info(f"[Hotboard] 定时发送热榜到 {len(self.target_groups) if self.target_groups else '配置的目标'}")
             
             # 如果有指定目标群组，发送到指定群组
             if self.target_groups:
                 for target in self.target_groups:
                     try:
-                        # 解析目标格式：platform:type:id
                         if isinstance(target, str) and ":" in target:
                             umo = target
                         else:
                             logger.warning(f"[Hotboard] 目标格式不正确: {target}")
                             continue
                         
-                        # 发送消息
-                        for chain in message_chains:
-                            await self.context.send_message(umo, chain)
-                            await asyncio.sleep(1)  # 避免发送过快
+                        # 发送合并转发消息
+                        await self.context.send_message(umo, nodes)
                             
                     except Exception as e:
                         logger.error(f"[Hotboard] 发送到 {target} 失败: {e}")
@@ -207,83 +203,113 @@ class HotboardPlugin(Star):
         
         return valid_results
     
-    def _format_single_item(self, item: Dict, platform_name: str) -> List:
-        """格式化单条热榜条目为消息组件"""
-        chain = []
+    def _build_forward_nodes(self, results: List[Dict]) -> List[Comp.Node]:
+        """
+        构建合并转发节点列表
         
-        # 标题和热度
-        title = item.get("title", "")
-        hot_value = item.get("hot_value", "")
+        格式：
+        title&热度hot_value
+        [pic]
+        url
+        title&热度hot_value
+        [pic]
+        url
+        ...
+        """
+        nodes = []
         
-        if hot_value:
-            text = f"{title}&{hot_value}"
-        else:
-            text = title
+        for result in results:
+            platform_name = result["name"]
+            update_time = result.get("update_time", "")
             
-        chain.append(Comp.Plain(text))
+            # 为每个平台创建一个转发节点
+            node_content = []
+            
+            # 平台标题
+            header = f"📌 {platform_name}"
+            if update_time:
+                header += f" 更新于 {update_time}"
+            node_content.append(Comp.Plain(header + "\n" + "="*30 + "\n"))
+            
+            # 热榜条目 - 新格式
+            for item in result["list"]:
+                # title&热度
+                title = item.get("title", "")
+                hot_value = item.get("hot_value", "")
+                
+                if hot_value:
+                    title_line = f"{title}&热度{hot_value}"
+                else:
+                    title_line = title
+                
+                node_content.append(Comp.Plain(title_line + "\n"))
+                
+                # 封面图
+                cover = item.get("cover") or item.get("pic")
+                if cover:
+                    node_content.append(Comp.Image.fromURL(cover))
+                
+                # url
+                url = item.get("url", "")
+                if url:
+                    node_content.append(Comp.Plain(url + "\n"))
+                
+                # 分隔行
+                node_content.append(Comp.Plain("\n"))
+            
+            # 创建转发节点
+            node = Comp.Node(
+                uin=0,  # 使用默认值
+                name=f"{platform_name}热榜",
+                content=node_content
+            )
+            nodes.append(node)
         
-        # 封面图（如果有）
-        cover = item.get("cover") or item.get("pic")
-        if cover:
-            chain.append(Comp.Image.fromURL(cover))
-        
-        # URL
-        url = item.get("url", "")
-        if url:
-            chain.append(Comp.Plain(url))
-        
-        return chain
+        return nodes
     
-    def _build_messages(self, results: List[Dict]) -> List[List]:
-        """构建消息链列表"""
-        if not results:
-            return []
+    def _build_normal_message(self, results: List[Dict]) -> List[List]:
+        """构建普通消息链列表（不使用合并转发）"""
+        messages = []
         
-        if self.merge_message:
-            # 合并模式：所有平台合并为一条消息
-            merged_chain = []
+        for result in results:
+            chain = []
+            platform_name = result["name"]
+            update_time = result.get("update_time", "")
             
-            for idx, result in enumerate(results):
-                if idx > 0:
-                    merged_chain.append(Comp.Plain("\n" + "="*20 + "\n"))
-                
-                # 平台标题
-                platform_title = f"【{result['name']}】"
-                if result.get("update_time"):
-                    platform_title += f" 更新于 {result['update_time']}"
-                merged_chain.append(Comp.Plain(platform_title + "\n"))
-                
-                # 热榜条目
-                for i, item in enumerate(result["list"], 1):
-                    merged_chain.append(Comp.Plain(f"\n{i}. "))
-                    item_chain = self._format_single_item(item, result["name"])
-                    merged_chain.extend(item_chain)
-                    merged_chain.append(Comp.Plain("\n"))
+            # 平台标题
+            header = f"📌 {platform_name}"
+            if update_time:
+                header += f" 更新于 {update_time}"
+            chain.append(Comp.Plain(header + "\n" + "="*30 + "\n\n"))
             
-            return [merged_chain]
-        else:
-            # 分开模式：每个平台单独发送
-            messages = []
+            # 热榜条目
+            for item in result["list"]:
+                # title&热度
+                title = item.get("title", "")
+                hot_value = item.get("hot_value", "")
+                
+                if hot_value:
+                    title_line = f"{title}&热度{hot_value}"
+                else:
+                    title_line = title
+                
+                chain.append(Comp.Plain(title_line + "\n"))
+                
+                # 封面图
+                cover = item.get("cover") or item.get("pic")
+                if cover:
+                    chain.append(Comp.Image.fromURL(cover))
+                
+                # url
+                url = item.get("url", "")
+                if url:
+                    chain.append(Comp.Plain(url + "\n"))
+                
+                chain.append(Comp.Plain("\n"))
             
-            for result in results:
-                chain = []
-                
-                # 平台标题
-                platform_title = f"【{result['name']}】"
-                if result.get("update_time"):
-                    platform_title += f" 更新于 {result['update_time']}"
-                chain.append(Comp.Plain(platform_title + "\n"))
-                
-                # 热榜条目
-                for i, item in enumerate(result["list"], 1):
-                    chain.append(Comp.Plain(f"\n{i}. "))
-                    item_chain = self._format_single_item(item, result["name"])
-                    chain.extend(item_chain)
-                    chain.append(Comp.Plain("\n"))
-                
-                messages.append(chain)
-            
-            return messages
+            messages.append(chain)
+        
+        return messages
     
     @filter.command("今日热点")
     async def today_hot(self, event: AstrMessageEvent, platform: str = None):
@@ -330,16 +356,23 @@ class HotboardPlugin(Star):
                 yield event.plain_result("❌ 获取热榜数据失败，请稍后重试")
                 return
             
-            # 构建并发送消息
-            messages = self._build_messages(results)
-            
-            for chain in messages:
-                yield event.chain_result(chain)
+            # 根据设置选择发送方式
+            if self.merge_forward:
+                # 使用合并转发
+                nodes = self._build_forward_nodes(results)
                 
-            # 如果不是合并模式，添加平台提示
-            if not self.merge_message and len(results) > 1:
-                platform_list = "、".join([r["name"] for r in results])
-                yield event.plain_result(f"✅ 以上来自：{platform_list}")
+                # 合并转发需要包装在列表中
+                yield event.chain_result(nodes)
+            else:
+                # 普通发送
+                messages = self._build_normal_message(results)
+                for chain in messages:
+                    yield event.chain_result(chain)
+                
+                # 如果多平台，提示来源
+                if len(results) > 1:
+                    platform_list = "、".join([r["name"] for r in results])
+                    yield event.plain_result(f"✅ 以上来自：{platform_list}")
                 
         except Exception as e:
             logger.error(f"[Hotboard] 指令执行异常: {e}")
@@ -373,6 +406,6 @@ class HotboardPlugin(Star):
             msg += " | ".join(items) + "\n"
         
         msg += f"\n💡 当前默认平台：{', '.join([self.platform_names.get(p, p) for p in self.default_platforms])}\n"
-        msg += "💡 使用示例：/今日热点 weibo 或 /今日热点 微博热搜"
+        msg += "💡 发送格式：/今日热点 weibo 或 /今日热点 微博热搜"
         
         yield event.plain_result(msg)
