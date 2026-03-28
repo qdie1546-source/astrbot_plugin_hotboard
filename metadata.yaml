@@ -1,6 +1,6 @@
 name: astrbot_plugin_hotboard
 desc: 热点榜单插件 - 支持多平台热榜获取、定时推送、合并发送，涵盖微博、抖音、B站、知乎等50+平台
-version: v3.0.1
+version: v3.0.2
 author: 星落云
 repo: https://github.com/qdie1546-source/astrbot_plugin_hotboard
 astrbot_version: ">=4.22.0"
