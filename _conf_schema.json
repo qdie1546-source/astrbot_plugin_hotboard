@@ -10,7 +10,7 @@
         { "const": "douyin", "title": "抖音" },
         { "const": "kuaishou", "title": "快手" },
         { "const": "bilibili", "title": "哔哩哔哩" },
-        { "const": "zhihu", "title": "知乎" },
+        { "const": "zhihu", "title": "知乎热榜" },
         { "const": "tieba", "title": "百度贴吧" },
         { "const": "toutiao", "title": "今日头条" },
         { "const": "qq-news", "title": "腾讯新闻" },
