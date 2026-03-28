@@ -42,10 +42,11 @@
 ```bash
 # 进入 AstrBot 插件目录
 cd AstrBot/data/plugins
-
+```
 # 克隆仓库
+```
 git clone https://github.com/qdie1546-source/astrbot_plugin_hotboard.git
-
+```
 # 重启 AstrBot
 
 
