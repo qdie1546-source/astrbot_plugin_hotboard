@@ -7,12 +7,12 @@ from astrbot.api import logger
 API_URL = "https://uapis.cn/api/v1/misc/hotboard"
 DEFAULT_API_KEY = "uapi-zrvbf3gaVhkhUfPrKrzOHpYA5ZU2ij3pz5kM3nNs"
 
-@register("astrbot_plugin_hotboard", "星落云", "热点榜单插件", "2.0.6")
+@register("astrbot_plugin_hotboard", "星落云", "热点榜单插件", "2.0.7")
 class HotBoardPlugin(Star):
 
     def __init__(self, context):
         super().__init__(context)
-        self.config = context.config  # ⚠️ 兼容 v4.22
+        self.config = self.get_conf()  # ⚠️ v4.22 获取后台配置
         asyncio.create_task(self.loop_push())
 
     async def fetch(self, type_):
@@ -38,6 +38,7 @@ class HotBoardPlugin(Star):
 
     @filter.command("今日热点")
     async def hot(self, event: AstrMessageEvent, type_: str = None):
+        self.config = self.get_conf()  # 每次指令重新获取最新配置
         types = [type_] if type_ else self.config.get("default_types", ["weibo"])
         if self.config.get("use_forward", True):
             msg = await self.build_forward(types)
@@ -55,6 +56,7 @@ class HotBoardPlugin(Star):
         await asyncio.sleep(10)
         while True:
             try:
+                self.config = self.get_conf()  # 每次循环获取最新后台配置
                 if self.config.get("push_enabled", True):
                     types = self.config.get("default_types", ["weibo"])
                     msg = await self.build_forward(types)
