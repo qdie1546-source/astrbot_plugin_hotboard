@@ -1,6 +1,6 @@
 name: astrbot_plugin_hotboard
 display_name: 热点榜单
-version: v2.0.6
+version: v2.0.7
 author: 星落云
 repo: https://github.com/qdie1546-source/astrbot_plugin_hotboard
 desc: 多平台热点榜单插件，支持定时推送、指令查询、多平台合并与限流保护
