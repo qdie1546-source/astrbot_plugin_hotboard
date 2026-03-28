@@ -1,10 +1,8 @@
 import httpx
 import time
-from astrbot.api.star import Star, register
-from astrbot.api.event import AstrMessageEvent
-from astrbot.api.filter import filter
+from astrbot.api.star import Star, register, scheduler
+from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api import logger
-from astrbot.api.scheduler import scheduler
 
 API_URL = "https://uapis.cn/api/v1/misc/hotboard"
 
@@ -17,7 +15,7 @@ TYPE_MAP = {
     "贴吧": "tieba"
 }
 
-@register("astrbot_plugin_hotboard", "HotBoard", "热点榜单插件", "2.1.0")
+@register("astrbot_plugin_hotboard", "HotBoard", "热点榜单插件", "2.0.0")
 class HotBoardPlugin(Star):
 
     def __init__(self, context):
@@ -100,7 +98,7 @@ class HotBoardPlugin(Star):
         else:
             yield event.plain_result(result)
 
-    # 定时推送
+    # 定时推送（每30分钟）
     @scheduler.scheduled_job("cron", id="hotboard_push", minute="*/30")
     async def push(self):
 
