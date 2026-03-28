@@ -1,71 +1,9 @@
 {
   "default_platforms": {
-    "description": "默认热榜平台（多选）",
+    "description": "默认热榜平台",
     "type": "list",
-    "hint": "当用户发送/今日热点不带参数时，或定时发送时，使用这些平台。可多选。",
-    "default": ["weibo"],
-    "options": [
-      "bilibili", "acfun", "weibo", "zhihu", "zhihu-daily", "douyin", "kuaishou",
-      "douban-movie", "douban-group", "tieba", "hupu", "ngabbs", "v2ex", "52pojie",
-      "hostloc", "coolapk", "baidu", "thepaper", "toutiao", "qq-news", "sina",
-      "sina-news", "netease-news", "huxiu", "ifanr", "sspai", "ithome", "ithome-xijiayi",
-      "juejin", "jianshu", "guokr", "36kr", "51cto", "csdn", "nodeseek", "hellogithub",
-      "lol", "genshin", "honkai", "starrail", "netease-music", "qq-music", "weread",
-      "weatheralarm", "earthquake", "history"
-    ]
-  },
-  "platform_names": {
-    "description": "平台显示名称映射",
-    "type": "dict",
-    "default": {
-      "bilibili": "哔哩哔哩",
-      "acfun": "A站",
-      "weibo": "微博热搜",
-      "zhihu": "知乎热榜",
-      "zhihu-daily": "知乎日报",
-      "douyin": "抖音",
-      "kuaishou": "快手",
-      "douban-movie": "豆瓣电影",
-      "douban-group": "豆瓣小组",
-      "tieba": "百度贴吧",
-      "hupu": "虎扑",
-      "ngabbs": "NGA论坛",
-      "v2ex": "V2EX",
-      "52pojie": "吾爱破解",
-      "hostloc": "全球主机交流",
-      "coolapk": "酷安",
-      "baidu": "百度热搜",
-      "thepaper": "澎湃新闻",
-      "toutiao": "今日头条",
-      "qq-news": "腾讯新闻",
-      "sina": "新浪热搜",
-      "sina-news": "新浪新闻",
-      "netease-news": "网易新闻",
-      "huxiu": "虎嗅",
-      "ifanr": "爱范儿",
-      "sspai": "少数派",
-      "ithome": "IT之家",
-      "ithome-xijiayi": "IT之家喜加一",
-      "juejin": "掘金",
-      "jianshu": "简书",
-      "guokr": "果壳",
-      "36kr": "36氪",
-      "51cto": "51CTO",
-      "csdn": "CSDN",
-      "nodeseek": "NodeSeek",
-      "hellogithub": "HelloGitHub",
-      "lol": "英雄联盟",
-      "genshin": "原神",
-      "honkai": "崩坏3",
-      "starrail": "星穹铁道",
-      "netease-music": "网易云音乐热歌榜",
-      "qq-music": "QQ音乐热歌榜",
-      "weread": "微信读书",
-      "weatheralarm": "天气预警",
-      "earthquake": "地震速报",
-      "history": "历史上的今天"
-    },
-    "invisible": true
+    "hint": "当用户发送/今日热点不带参数时，或定时发送时，使用这些平台。请填写平台代码，如 weibo, douyin, bilibili 等",
+    "default": ["weibo"]
   },
   "schedule_time": {
     "description": "定时发送时间（24小时制）",
@@ -91,22 +29,15 @@
     "default": "uapi-zrvbf3gaVhkhUfPrKrzOHpYA5ZU2ij3pz5kM3nNs"
   },
   "top_count": {
-    "description": "显示条数",
+    "description": "显示条数(1-50)",
     "type": "int",
-    "hint": "每个平台显示多少条热榜（1-50）",
-    "default": 10,
-    "slider": {"min": 1, "max": 50, "step": 1}
+    "hint": "每个平台显示多少条热榜，建议10-20条",
+    "default": 10
   },
   "target_groups": {
     "description": "定时发送目标（可选）",
     "type": "list",
     "hint": "指定定时发送的群组或用户ID（格式：platform:type:id，如 aiocqhttp:GroupMessage:123456），留空则不发送",
-    "default": [],
-    "items": {
-      "id": {
-        "description": "目标ID",
-        "type": "string"
-      }
-    }
+    "default": []
   }
 }
