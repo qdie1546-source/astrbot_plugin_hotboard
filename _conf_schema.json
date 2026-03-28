@@ -1,0 +1,44 @@
+{
+  "default_types": {
+    "type": "array",
+    "title": "默认热点平台",
+    "description": "可多选",
+    "items": {
+      "type": "string",
+      "oneOf": [
+        { "const": "weibo", "title": "微博热搜" },
+        { "const": "douyin", "title": "抖音" },
+        { "const": "kuaishou", "title": "快手" },
+        { "const": "bilibili", "title": "哔哩哔哩" },
+        { "const": "zhihu", "title": "知乎" },
+        { "const": "tieba", "title": "百度贴吧" },
+        { "const": "toutiao", "title": "今日头条" },
+        { "const": "qq-news", "title": "腾讯新闻" },
+        { "const": "netease-news", "title": "网易新闻" },
+        { "const": "hupu", "title": "虎扑" },
+        { "const": "csdn", "title": "CSDN" },
+        { "const": "ithome", "title": "IT之家" },
+        { "const": "juejin", "title": "掘金" },
+        { "const": "36kr", "title": "36氪" },
+        { "const": "coolapk", "title": "酷安" },
+        { "const": "v2ex", "title": "V2EX" }
+      ]
+    },
+    "default": ["weibo", "douyin"]
+  },
+  "interval": {
+    "type": "number",
+    "title": "推送间隔（秒）",
+    "default": 1800
+  },
+  "push_enabled": {
+    "type": "boolean",
+    "title": "开启定时推送",
+    "default": true
+  },
+  "use_forward": {
+    "type": "boolean",
+    "title": "使用合并转发",
+    "default": true
+  }
+}
